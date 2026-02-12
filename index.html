@@ -81,7 +81,7 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
+        import React, { useState, useCallback } from 'react';
         import { createRoot } from 'react-dom/client';
         import { 
             Calendar, 
@@ -111,7 +111,6 @@
 
         const ACCENT_COLOR = '#8FB092';
 
-        // Hardcoded English Strings
         const STRINGS = {
             tab_today: 'Today',
             tab_history: 'History',
@@ -219,11 +218,18 @@
 
         // --- Helper Functions ---
 
-        // Creates a local date object from yyyy-mm-dd string to prevent timezone shifts
         const parseLocalDate = (dateString) => {
             if (!dateString) return new Date();
             const [year, month, day] = dateString.split('-').map(Number);
             return new Date(year, month - 1, day);
+        };
+
+        const getLocalDateString = (d) => {
+            const date = new Date(d);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         };
 
         // --- Sub-Components ---
@@ -242,22 +248,12 @@
             const formatTime = (isoString) => new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(isoString));
             const formatDate = (dateObj) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(dateObj);
 
-            // Filter logs for the current dateKey
-            const getDayKey = (d) => {
-                const date = new Date(d);
-                // Use local components to match the date picker value logic
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
-
-            const dayLogs = logs.filter(log => getDayKey(log.date) === dateKey)
+            const dayLogs = logs.filter(log => getLocalDateString(log.date) === dateKey)
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const handleDateHeaderChange = (e) => {
                 if (onDateChange) {
-                onDateChange(dateKey, e.target.value);
+                    onDateChange(dateKey, e.target.value);
                 }
             };
 
@@ -270,7 +266,6 @@
 
             return (
                 <div className="space-y-4 print:space-y-2 pb-safe-content">
-                {/* Header Row */}
                 <div className="flex justify-between items-end px-2 mb-6 print:mb-2">
                     <div className="w-full">
                         {isHistoryView && (
@@ -279,7 +274,6 @@
                             </div>
                         )}
                     
-                        {/* Date Display / Edit */}
                         {isEditing ? (
                             <input 
                             type="date" 
@@ -311,7 +305,6 @@
                         
                         return (
                         <div key={log.id} className="relative flex gap-4 items-center pl-0 print:break-inside-avoid">
-                            {/* Timeline Node - Clickable in edit mode to change icon */}
                             <button 
                             onClick={(e) => {
                                 if (isEditing) {
@@ -326,7 +319,6 @@
                             <Icon size={18} strokeWidth={2} />
                             </button>
                             
-                            {/* Log Content */}
                             <div 
                             className={`flex-1 bg-white rounded-xl p-4 border border-stone-100 shadow-sm print:border-stone-200 print:shadow-none flex justify-between items-start ${isEditing ? 'cursor-pointer hover:bg-stone-50' : ''}`}
                             onClick={() => isEditing && onEditLog(log)}
@@ -348,7 +340,6 @@
                                 )}
                             </div>
 
-                            {/* Delete Button (Edit Mode) */}
                             {isEditing && (
                                 <button 
                                 onClick={(e) => { 
@@ -371,16 +362,9 @@
         };
 
         const HistoryScreen = ({ logs, onSelectDate }) => {
-            const getDayKey = (d) => {
-                const date = new Date(d);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
             const formatDate = (isoString) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(parseLocalDate(isoString));
             
-            const dates = [...new Set(logs.map(log => getDayKey(log.date)))].sort().reverse();
+            const dates = [...new Set(logs.map(log => getLocalDateString(log.date)))].sort().reverse();
 
             return (
                 <div className="space-y-4 pb-safe-content">
@@ -390,7 +374,7 @@
                     <div>
                         <div className="font-bold text-stone-700">{formatDate(dateKey)}</div>
                         <div className="text-xs text-stone-400 mt-1">
-                        {logs.filter(l => getDayKey(l.date) === dateKey).length} Records
+                        {logs.filter(l => getLocalDateString(l.date) === dateKey).length} Records
                         </div>
                     </div>
                     <ChevronRight className="text-stone-300 group-hover:text-stone-500 transition-colors" size={20} />
@@ -400,7 +384,7 @@
             );
         };
 
-        const SitterScreen = ({ careGuideItems, setCareGuideItems, emergencyContact, setEmergencyContact, profile }) => {
+        const SitterScreen = ({ careGuideItems, setCareGuideItems, emergencyContact, setEmergencyContact }) => {
             const [isEditingGuide, setIsEditingGuide] = useState(false);
 
             const handleGuideChange = (index, field, newVal) => {
@@ -639,21 +623,16 @@
         };
 
         const App = () => {
+            const getTodayKey = () => getLocalDateString(new Date());
+
             const [activeTab, setActiveTab] = useState('today');
-            const [selectedHistoryDate, setSelectedHistoryDate] = useState(null);
+            const [selectedDateKey, setSelectedDateKey] = useState(getTodayKey()); 
+            const [selectedHistoryDate, setSelectedHistoryDate] = useState(null); // Fixed ReferenceError
             
             const [isFabOpen, setIsFabOpen] = useState(false);
             const [modalOpen, setModalOpen] = useState(false);
             const [selectedLogType, setSelectedLogType] = useState(null);
             const [editLogData, setEditLogData] = useState(null); 
-
-            const getTodayKey = () => {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
 
             const [logs, setLogs] = useState([
                 { id: 1, type: 'pellets', amount: '15g', date: new Date().toISOString(), notes: '' },
@@ -691,85 +670,78 @@
                 setModalOpen(true);
             };
 
-            const handleDeleteLog = (id) => {
+            const handleDeleteLog = useCallback((id) => {
                 if (window.confirm(STRINGS.confirm_delete)) {
-                setLogs((prevLogs) => prevLogs.filter(l => l.id !== id));
+                    setLogs((prev) => prev.filter(l => l.id !== id));
                 }
-            };
+            }, []);
 
-            const handleEditLog = (log) => {
+            const handleEditLog = useCallback((log) => {
                 setSelectedLogType(log.type);
                 setEditLogData(log);
                 setModalOpen(true);
-            };
+            }, []);
 
-            const handleIconChange = (logId, newTypeId) => {
-                setLogs((prevLogs) => prevLogs.map(log => 
+            const handleIconChange = useCallback((logId, newTypeId) => {
+                setLogs((prev) => prev.map(log => 
                     log.id === logId ? { ...log, type: newTypeId } : log
                 ));
-            };
+            }, []);
 
             const handleDateChange = (oldDateKey, newDateString) => {
-                const newLogs = logs.map(log => {
-                const logDate = new Date(log.date);
-                const logYear = logDate.getFullYear();
-                const logMonth = String(logDate.getMonth() + 1).padStart(2, '0');
-                const logDay = String(logDate.getDate()).padStart(2, '0');
-                const logDateKey = `${logYear}-${logMonth}-${logDay}`;
+                setLogs((prev) => prev.map(log => {
+                    const logDateKey = getLocalDateString(log.date);
 
-                if (logDateKey === oldDateKey) {
-                    const hours = logDate.getHours();
-                    const minutes = logDate.getMinutes();
-                    const seconds = logDate.getSeconds();
-                    
-                    const [ny, nm, nd] = newDateString.split('-').map(Number);
-                    const newDate = new Date(ny, nm - 1, nd, hours, minutes, seconds);
-                    
-                    return { ...log, date: newDate.toISOString() };
-                }
-                return log;
-                });
-                setLogs(newLogs);
-                if (activeTab === 'history' && selectedHistoryDate === oldDateKey) {
-                setSelectedHistoryDate(newDateString);
-                }
+                    if (logDateKey === oldDateKey) {
+                        const logDate = new Date(log.date);
+                        const hours = logDate.getHours();
+                        const minutes = logDate.getMinutes();
+                        const seconds = logDate.getSeconds();
+                        
+                        const [ny, nm, nd] = newDateString.split('-').map(Number);
+                        const newDate = new Date(ny, nm - 1, nd, hours, minutes, seconds);
+                        
+                        return { ...log, date: newDate.toISOString() };
+                    }
+                    return log;
+                }));
+                setSelectedDateKey(newDateString);
             };
 
             const saveLog = (data) => {
                 let baseDate;
                 if (editLogData) {
-                baseDate = new Date(editLogData.date);
+                    baseDate = new Date(editLogData.date);
                 } else {
-                let dateKey;
-                if (activeTab === 'history' && selectedHistoryDate) {
-                    dateKey = selectedHistoryDate;
-                } else {
-                    dateKey = getTodayKey();
-                }
-                baseDate = parseLocalDate(dateKey);
+                    baseDate = parseLocalDate(selectedDateKey);
+                    const now = new Date();
+                    if (selectedDateKey === getTodayKey()) {
+                        baseDate.setHours(now.getHours(), now.getMinutes());
+                    } else {
+                        baseDate.setHours(12, 0); 
+                    }
                 }
 
                 const [hours, minutes] = data.time.split(':');
                 baseDate.setHours(parseInt(hours), parseInt(minutes));
 
                 if (editLogData) {
-                const updatedLogs = logs.map(l => l.id === editLogData.id ? {
-                    ...l,
-                    type: selectedLogType,
-                    date: baseDate.toISOString(),
-                    amount: data.amount,
-                    notes: data.notes
-                } : l);
-                setLogs(updatedLogs);
+                    setLogs((prev) => prev.map(l => l.id === editLogData.id ? {
+                        ...l,
+                        type: selectedLogType,
+                        date: baseDate.toISOString(),
+                        amount: data.amount,
+                        notes: data.notes
+                    } : l));
                 } else {
-                const newLog = {
-                    id: Date.now(),
-                    type: selectedLogType,
-                    date: baseDate.toISOString(),
-                    amount: data.amount,
-                    notes: data.notes
-                };
-                setLogs([newLog, ...logs]);
+                    const newLog = {
+                        id: Date.now(),
+                        type: selectedLogType,
+                        date: baseDate.toISOString(),
+                        amount: data.amount,
+                        notes: data.notes
+                    };
+                    setLogs((prev) => [newLog, ...prev]);
                 }
                 
                 setModalOpen(false);
@@ -916,11 +888,11 @@
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 max-w-md mx-auto w-full print:max-w-none print:px-0 print:py-0 print:overflow-visible">
+                    <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 max-w-md mx-auto w-full print:max-w-none print:px-0 print:py-0 print:overflow-visible no-scrollbar">
                         {activeTab === 'today' && (
                             <Timeline 
                                 logs={logs} 
-                                dateKey={getTodayKey()} 
+                                dateKey={selectedDateKey} 
                                 onDeleteLog={handleDeleteLog}
                                 onEditLog={handleEditLog}
                                 onDateChange={handleDateChange}
@@ -929,27 +901,11 @@
                         )}
                         
                         {activeTab === 'history' && !selectedHistoryDate && (
-                        <HistoryScreen logs={logs} onSelectDate={(date) => setSelectedHistoryDate(date)} />
-                        )}
-                        {activeTab === 'history' && selectedHistoryDate && (
-                        <div>
-                            <button 
-                            onClick={() => setSelectedHistoryDate(null)}
-                            className="mb-4 flex items-center gap-1 text-stone-400 hover:text-stone-600 px-2"
-                            >
-                            <ChevronLeft size={18} />
-                            {STRINGS.back}
-                            </button>
-                            <Timeline 
-                                logs={logs} 
-                                dateKey={selectedHistoryDate} 
-                                isHistoryView={true} 
-                                onDeleteLog={handleDeleteLog}
-                                onEditLog={handleEditLog}
-                                onDateChange={handleDateChange}
-                                onIconChange={handleIconChange}
-                            />
-                        </div>
+                        <HistoryScreen logs={logs} onSelectDate={(date) => {
+                            setSelectedHistoryDate(date);
+                            setSelectedDateKey(date);
+                            setActiveTab('today'); 
+                        }} />
                         )}
 
                         {activeTab === 'sitter' && (
@@ -958,14 +914,13 @@
                             setCareGuideItems={setCareGuideItems} 
                             emergencyContact={emergencyContact}
                             setEmergencyContact={setEmergencyContact}
-                            profile={profile}
                         />
                         )}
                         
                         {activeTab === 'profile' && <ProfileScreen profile={profile} setProfile={setProfile} />}
                     </main>
 
-                    {!isFabOpen && (activeTab === 'today' || (activeTab === 'history' && selectedHistoryDate)) && (
+                    {!isFabOpen && (activeTab === 'today') && (
                         <button 
                         onClick={() => setIsFabOpen(true)}
                         className="fixed bottom-24 right-6 z-30 w-14 h-14 bg-[#8FB092] rounded-2xl shadow-lg shadow-[#8FB092]/30 text-white flex items-center justify-center transition-transform active:scale-90 print:hidden"
@@ -981,13 +936,13 @@
                         <div className="max-w-md mx-auto flex justify-between items-center">
                         <NavIcon 
                             icon={Calendar} 
-                            isActive={activeTab === 'today'} 
-                            onClick={() => { setActiveTab('today'); setIsFabOpen(false); setSelectedHistoryDate(null); }} 
+                            isActive={activeTab === 'today' && selectedDateKey === getTodayKey()} 
+                            onClick={() => { setActiveTab('today'); setSelectedDateKey(getTodayKey()); setIsFabOpen(false); setSelectedHistoryDate(null); }} 
                         />
                         <NavIcon 
                             icon={History} 
-                            isActive={activeTab === 'history'} 
-                            onClick={() => { setActiveTab('history'); setIsFabOpen(false); }} 
+                            isActive={activeTab === 'history' || (activeTab === 'today' && selectedDateKey !== getTodayKey())} 
+                            onClick={() => { setActiveTab('history'); setSelectedHistoryDate(null); setIsFabOpen(false); }} 
                         />
                         <NavIcon 
                             icon={ClipboardList} 
