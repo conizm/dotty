@@ -1,7 +1,7 @@
 const CACHE_NAME = 'dotty-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
+  '/dotty/',
+  '/dotty/index.html',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://esm.sh/react@18.2.0',
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
           }
           // HTMLリクエストならindex.htmlをフォールバック
           if (event.request.destination === 'document') {
-            return caches.match('/index.html');
+            return caches.match('/dotty/index.html');
           }
         });
       })
