@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dotty-v2';
+const CACHE_NAME = 'dotty-v3';
 const urlsToCache = [
   '/dotty/',
   '/dotty/index.html',
@@ -46,29 +46,64 @@ self.addEventListener('activate', (event) => {
 // ネットワーク優先（Network First）戦略
 // まずネットワークから取得し、失敗したらキャッシュから取得
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // ネットワークから取得成功 → キャッシュも更新
-        if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // ネットワーク失敗 → キャッシュから取得（オフライン対応）
-        return caches.match(event.request).then((response) => {
-          if (response) {
-            return response;
+  // GETリクエストのみ処理（POST/PUTなどは通常通り）
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // ナビゲーションリクエスト（ページ遷移）のみ処理
+  // これにより、入力欄に関連するリクエストが妨げられない
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // ネットワークから取得成功 → キャッシュも更新
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-          // HTMLリクエストならindex.htmlをフォールバック
-          if (event.request.destination === 'document') {
+          return response;
+        })
+        .catch(() => {
+          // ネットワーク失敗 → キャッシュから取得（オフライン対応）
+          return caches.match(event.request).then((response) => {
+            if (response) {
+              return response;
+            }
+            // HTMLリクエストならindex.htmlをフォールバック
             return caches.match('/dotty/index.html');
+          });
+        })
+    );
+    return;
+  }
+  
+  // 静的アセット（JS、CSS、画像など）のみキャッシュ処理
+  const url = new URL(event.request.url);
+  const isStaticAsset = event.request.destination === 'script' || 
+                        event.request.destination === 'style' ||
+                        event.request.destination === 'image' ||
+                        event.request.destination === 'font' ||
+                        urlsToCache.some(cacheUrl => url.href.includes(cacheUrl));
+  
+  if (isStaticAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-        });
-      })
-  );
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  }
+  // その他のリクエスト（XHR、fetch APIなど）は通常通り処理され、Service Workerは介入しない
 });
