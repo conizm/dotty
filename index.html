@@ -19,7 +19,7 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="dotty">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/conizm/dotty/main/images/dotty_logo_favi.png">
 
@@ -55,7 +55,7 @@
             scrollbar-width: none;
         }
         .pb-safe { 
-            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 27px);
             background-color: #FDFDFD;
         }
         .pb-safe-content { padding-bottom: 80px; }
