@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>dotty - Rabbit Health Tracker</title>
     
     <!-- Favicon (Raw URL for direct image access) -->
@@ -556,12 +556,14 @@
                             value={item.title || STRINGS.sitter_sections[item.id] || STRINGS.categories[item.id] || ''}
                             onChange={(e) => handleGuideChange(idx, 'title', e.target.value)}
                             className="w-full text-sm font-bold bg-stone-50 border border-stone-200 rounded px-2 py-1 focus:outline-none focus:border-[#8FB092]"
+                            onClick={(e) => e.target.focus()}
                             />
                             <textarea
                             value={item.text}
                             onChange={(e) => handleGuideChange(idx, 'text', e.target.value)}
                             className="w-full text-sm bg-stone-50 border border-stone-200 rounded p-2 focus:outline-none focus:border-[#8FB092] resize-none"
                             rows={2}
+                            onClick={(e) => e.target.focus()}
                             />
                             </div>
                         ) : (
@@ -600,6 +602,7 @@
                         onChange={(e) => setEmergencyContact(e.target.value)}
                         className="w-full text-sm bg-white border border-stone-200 rounded p-2 focus:outline-none focus:border-[#8FB092]"
                         rows={4}
+                        onClick={(e) => e.target.focus()}
                     />
                     ) : (
                     <p className="text-stone-600 text-sm whitespace-pre-line leading-relaxed">
@@ -649,6 +652,7 @@
                             value={tempProfile.name} 
                             onChange={e => setTempProfile({...tempProfile, name: e.target.value})}
                             className="text-center text-xl font-bold bg-stone-50 border-b border-stone-300 focus:border-[#8FB092] outline-none px-2 py-1 w-2/3"
+                            onClick={(e) => e.target.focus()}
                         />
                     )}
                 </div>
@@ -682,6 +686,7 @@
                                 value={tempProfile.birthday} 
                                 onChange={e => setTempProfile({...tempProfile, birthday: e.target.value})}
                                 className="bg-stone-50 rounded px-2 py-1 text-right outline-none text-stone-700 text-sm"
+                                onClick={(e) => e.target.focus()}
                             />
                         ) : (
                             <span className="font-medium text-stone-700 text-sm">{profile.birthday}</span>
@@ -696,6 +701,7 @@
                                 value={tempProfile.weight} 
                                 onChange={e => setTempProfile({...tempProfile, weight: e.target.value})}
                                 className="bg-stone-50 rounded px-2 py-1 text-right outline-none text-stone-700 w-24 text-sm"
+                                onClick={(e) => e.target.focus()}
                             />
                         ) : (
                             <span className="font-medium text-stone-700 text-sm">{profile.weight}</span>
@@ -711,6 +717,7 @@
                                 onChange={e => setTempProfile({...tempProfile, likes: e.target.value})}
                                 className="bg-stone-50 rounded px-2 py-1 text-right outline-none text-stone-700 text-sm flex-1 ml-4"
                                 placeholder="Comma separated"
+                                onClick={(e) => e.target.focus()}
                             />
                         ) : (
                             <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -931,6 +938,7 @@
                                         type="time" 
                                         defaultValue={initialTimeStr}
                                         className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 text-stone-700 focus:outline-none focus:border-[#8FB092] h-[50px]" 
+                                        onClick={(e) => e.target.focus()}
                                     />
                                 </div>
                                 <div className="flex-1">
@@ -942,6 +950,7 @@
                                         placeholder="..."
                                         className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 text-stone-700 focus:outline-none focus:border-[#8FB092] h-[50px]" 
                                         autoFocus
+                                        onClick={(e) => e.target.focus()}
                                     />
                                 </div>
                             </div>
@@ -953,6 +962,7 @@
                                     defaultValue={editLogData ? editLogData.notes : ''}
                                     rows="3"
                                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-stone-700 focus:outline-none focus:border-[#8FB092] resize-none" 
+                                    onClick={(e) => e.target.focus()}
                                 />
                             </div>
 
