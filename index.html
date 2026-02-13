@@ -828,7 +828,7 @@
             };
 
             return (
-                <div className="pb-safe-content space-y-3">
+                <div className="pb-safe-content space-y-3 overflow-hidden">
                 <div className="flex justify-end items-center px-2 pt-6">
                     <div className="print:hidden">
                         <EditToggleButton isEditing={isEditingProfile} onClick={isEditingProfile ? handleSaveProfile : startEditing} />
@@ -1386,8 +1386,10 @@
                                 min="1"
                                 max="5"
                                 step="1"
+                                inputMode="numeric"
+                                pattern="[1-5]"
                                 className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
-                                style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                style={{ height: '50px', MozAppearance: 'textfield' }}
                                 readOnly={false}
                                 tabIndex={0}
                                 onClick={(e) => {
@@ -1419,8 +1421,10 @@
                                     min="0"
                                     max="100"
                                     step="1"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
-                                    style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                    style={{ height: '50px', MozAppearance: 'textfield' }}
                                     placeholder="g"
                                     readOnly={false}
                                     tabIndex={0}
@@ -1455,8 +1459,9 @@
                                     min="0"
                                     max="10"
                                     step="0.1"
+                                    inputMode="decimal"
                                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
-                                    style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                    style={{ height: '50px', MozAppearance: 'textfield' }}
                                     placeholder="ml"
                                     readOnly={false}
                                     tabIndex={0}
@@ -1651,7 +1656,7 @@
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-scroll overflow-x-hidden px-4 py-4 max-w-md mx-auto w-full pt-[60px] pb-[120px] print:max-w-none print:px-0 print:py-0 print:pt-0 print:pb-0 print:overflow-visible no-scrollbar" id="main-content">
+                    <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 max-w-md mx-auto w-full pt-[60px] pb-[120px] print:max-w-none print:px-0 print:py-0 print:pt-0 print:pb-0 print:overflow-visible no-scrollbar" id="main-content">
                         {activeTab === 'today' && (
                             <Timeline 
                                 logs={logs} 
