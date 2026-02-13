@@ -1125,6 +1125,14 @@
                 
                 setModalOpen(false);
                 setEditLogData(null);
+                
+                // 入力後、見出しの位置までスクロール
+                setTimeout(() => {
+                    const mainContent = document.getElementById('main-content');
+                    if (mainContent) {
+                        mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }, 100);
             };
 
             const FabMenu = () => {
@@ -1368,54 +1376,67 @@
                 
                 // 5段階評価タイプ（Pellets, Veggies, Hay, Water, Treats, Poop, Pee）
                 if (['pellets', 'veggies', 'hay', 'water', 'treats', 'poop', 'pee'].includes(type)) {
-                    const options = [1, 2, 3, 4, 5];
-                    
                     return (
                         <div className="relative">
-                            <select
+                            <input
+                                type="number"
                                 name="amount"
                                 value={selectedValue}
                                 onChange={(e) => handleChange(e.target.value)}
-                                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
-                                style={{ height: '50px' }}
-                            >
-                                <option value="">選択してください</option>
-                                {options.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                        {opt}
-                                    </option>
-                                ))}
-                            </select>
+                                min="1"
+                                max="5"
+                                step="1"
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
+                                style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                readOnly={false}
+                                tabIndex={0}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setTimeout(() => e.target.focus(), 100);
+                                }}
+                                onTouchStart={(e) => {
+                                    e.stopPropagation();
+                                }}
+                                onTouchEnd={(e) => {
+                                    e.stopPropagation();
+                                    setTimeout(() => e.target.focus(), 100);
+                                }}
+                            />
                         </div>
                     );
                 }
                 
                 // Critical Care（1g単位、0-100g）
                 if (type === 'cc') {
-                    const options = [];
-                    for (let i = 0; i <= 100; i++) {
-                        options.push(i);
-                    }
-                    const currentValue = selectedValue ? parseFloat(selectedValue) : 0;
-                    
                     return (
                         <div className="relative">
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 overflow-hidden">
-                                    <select
-                                        name="amount"
-                                        value={selectedValue}
-                                        onChange={(e) => handleChange(e.target.value)}
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
-                                        style={{ height: '50px' }}
-                                    >
-                                        {options.map((opt) => (
-                                            <option key={opt} value={opt}>
-                                                {opt}g
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <input
+                                    type="number"
+                                    name="amount"
+                                    value={selectedValue}
+                                    onChange={(e) => handleChange(e.target.value)}
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
+                                    style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                    placeholder="g"
+                                    readOnly={false}
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTimeout(() => e.target.focus(), 100);
+                                    }}
+                                    onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onTouchEnd={(e) => {
+                                        e.stopPropagation();
+                                        setTimeout(() => e.target.focus(), 100);
+                                    }}
+                                />
+                                <span className="text-stone-500 text-sm">g</span>
                             </div>
                         </div>
                     );
@@ -1423,29 +1444,35 @@
                 
                 // Medication（0.1ml単位、0-10ml）
                 if (type === 'meds') {
-                    const options = [];
-                    for (let i = 0; i <= 100; i++) {
-                        options.push((i / 10).toFixed(1));
-                    }
-                    
                     return (
                         <div className="relative">
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 overflow-hidden">
-                                    <select
-                                        name="amount"
-                                        value={selectedValue}
-                                        onChange={(e) => handleChange(e.target.value)}
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
-                                        style={{ height: '50px' }}
-                                    >
-                                        {options.map((opt) => (
-                                            <option key={opt} value={opt}>
-                                                {opt}ml
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <input
+                                    type="number"
+                                    name="amount"
+                                    value={selectedValue}
+                                    onChange={(e) => handleChange(e.target.value)}
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center"
+                                    style={{ height: '50px', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                    placeholder="ml"
+                                    readOnly={false}
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTimeout(() => e.target.focus(), 100);
+                                    }}
+                                    onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onTouchEnd={(e) => {
+                                        e.stopPropagation();
+                                        setTimeout(() => e.target.focus(), 100);
+                                    }}
+                                />
+                                <span className="text-stone-500 text-sm">ml</span>
                             </div>
                         </div>
                     );
@@ -1607,12 +1634,13 @@
 
             return (
                 <div className="h-screen flex flex-col bg-[#FDFDFD] font-sans text-[#44403C] overflow-hidden print:bg-white print:h-auto print:overflow-visible">
-                    <header className="fixed top-0 left-0 right-0 bg-[#FDFDFD] px-6 py-3 flex justify-between items-center border-b border-stone-100 z-30 print:hidden">
+                    <header className="fixed top-0 left-0 right-0 bg-[#FDFDFD] px-6 py-3 flex justify-between items-center border-b border-stone-100 z-30 print:hidden" style={{ backgroundColor: '#FDFDFD' }}>
                         <div className="flex items-center gap-2">
                         <img 
                             src="https://conizm.cc/dotty/images/dotty_logo_yoko.png" 
                             alt="Logo" 
-                            className="h-8 object-contain" 
+                            className="object-contain" 
+                            style={{ height: '25.6px', width: 'auto', transform: 'scale(0.8)' }}
                         />
                         </div>
 
@@ -1623,7 +1651,7 @@
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 max-w-md mx-auto w-full pt-[60px] pb-[120px] print:max-w-none print:px-0 print:py-0 print:pt-0 print:pb-0 print:overflow-visible no-scrollbar">
+                    <main className="flex-1 overflow-y-scroll overflow-x-hidden px-4 py-4 max-w-md mx-auto w-full pt-[60px] pb-[120px] print:max-w-none print:px-0 print:py-0 print:pt-0 print:pb-0 print:overflow-visible no-scrollbar" id="main-content">
                         {activeTab === 'today' && (
                             <Timeline 
                                 logs={logs} 
@@ -1682,7 +1710,7 @@
                     <DatePickerModal />
                     <EntryModal />
 
-                    <nav className="fixed bottom-[30px] left-0 right-0 bg-[#FDFDFD] border-t border-stone-100 px-8 py-3 pb-safe z-30 print:hidden">
+                    <nav className="fixed bottom-[30px] left-0 right-0 bg-[#FDFDFD] border-t border-stone-100 px-8 py-3 pb-safe z-30 print:hidden" style={{ backgroundColor: '#FDFDFD' }}>
                         <div className="max-w-md mx-auto flex justify-between items-center">
                         <NavIcon 
                             icon={Calendar} 
