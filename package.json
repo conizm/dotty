@@ -1,0 +1,11 @@
+{
+  "name": "dotty-pwa",
+  "version": "1.0.0",
+  "description": "Rabbit Health Tracker PWA",
+  "scripts": {
+    "serve": "npx http-server . -p 8080 -c-1 --cors",
+    "start": "npx http-server . -p 8080 -c-1 --cors"
+  },
+  "devDependencies": {}
+}
+

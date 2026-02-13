@@ -1,0 +1,26 @@
+{
+  "name": "dotty - Rabbit Health Tracker",
+  "short_name": "dotty",
+  "description": "Simple health tracker for rabbits.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFDFD",
+  "theme_color": "#8FB092",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/conizm/dotty/main/images/dotty_logo_favi.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/conizm/dotty/main/images/dotty_logo_favi.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
