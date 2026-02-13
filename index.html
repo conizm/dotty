@@ -60,6 +60,27 @@
         }
         .pb-safe-content { padding-bottom: 80px; }
         
+        /* アドレスバー出現時でもフッターが見えるように余白を追加 */
+        body {
+            padding-bottom: 150px;
+        }
+        
+        /* selectタグのスタイリング */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+        
+        /* Webで見たときのステータスバーの背景色 */
+        html {
+            background-color: #FDFDFD;
+        }
+        
         /* iOS PWAでキーボードが表示されるようにする */
         input, textarea {
             user-select: text !important;
@@ -115,7 +136,7 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useCallback } from 'react';
+        import React, { useState, useCallback, useEffect } from 'react';
         import { createRoot } from 'react-dom/client';
         import { 
             Calendar, 
@@ -141,7 +162,8 @@
             Save,
             Wheat,
             Cake,
-            Scale
+            Scale,
+            Cookie
         } from 'lucide-react';
 
         // カスタムアイコン: うさぎのうんち（丸3つ・三角形配置）
@@ -246,31 +268,30 @@
         };
 
         const LOG_TYPES = [
-            { id: 'pellets', icon: Utensils },
-            { id: 'veggies', icon: Carrot },
             { id: 'hay', icon: Wheat },
             { id: 'water', icon: WaterBottleIcon },
+            { id: 'pellets', icon: Utensils },
+            { id: 'veggies', icon: Carrot },
+            { id: 'treats', icon: Cookie },
             { id: 'cc', icon: Syringe },
             { id: 'meds', icon: Pill },
             { id: 'poop', icon: RabbitPoop },
             { id: 'pee', icon: Droplet },
-            { id: 'custom', icon: Edit2 },
         ];
 
         // Sitter画面用アイコンマッピング（LOG_TYPESに加えて litter, play を含む）
         const SITTER_ICON_MAP = {
-            pellets: Utensils,
-            veggies: Carrot,
             hay: Wheat,
             water: WaterBottleIcon,
+            pellets: Utensils,
+            veggies: Carrot,
+            treats: Cookie,
             cc: Syringe,
             meds: Pill,
             poop: RabbitPoop,
             pee: Droplet,
-            custom: Edit2,
             litter: LitterBoxIcon,
             play: MusicNoteIcon,
-            others: Edit2,
         };
 
         // --- Reusable Components ---
@@ -301,8 +322,8 @@
         const EditToggleButton = ({ isEditing, onClick }) => (
             <button 
                 onClick={onClick} 
-                className={`p-2 rounded-full transition-colors ${isEditing ? 'text-white' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-100'}`}
-                style={isEditing ? { backgroundColor: ACCENT_COLOR } : {}}
+                className={`p-2 rounded-full transition-colors ${isEditing ? 'text-white' : 'hover:text-stone-600 hover:bg-stone-100'}`}
+                style={isEditing ? { backgroundColor: ACCENT_COLOR } : { color: 'rgba(120, 113, 108, 0.6)' }}
             >
                 {isEditing ? <Check size={20} /> : <Edit2 size={20} />}
             </button>
@@ -346,7 +367,7 @@
         }) => {
             const [isEditing, setIsEditing] = useState(false);
 
-            const formatTime = (isoString) => new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(isoString));
+            const formatTime = (isoString) => new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(isoString));
             const formatDate = (dateObj) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(dateObj);
 
             const dayLogs = logs.filter(log => getLocalDateString(log.date) === dateKey)
@@ -384,18 +405,9 @@
                             </div>
                         )}
                     
-                        {isEditing ? (
-                            <input 
-                            type="date" 
-                            value={dateKey} 
-                            onChange={handleDateHeaderChange}
-                            className="text-xl font-bold text-stone-800 bg-stone-100 rounded px-2 py-1 -ml-2 w-full outline-none focus:ring-2 focus:ring-[#8FB092]"
-                            />
-                        ) : (
-                            <h2 className="text-xl font-bold text-stone-800 tracking-tight">
-                                {formatDate(parseLocalDate(dateKey))}
-                            </h2>
-                        )}
+                        <h2 className="text-xl font-bold text-stone-800 tracking-tight">
+                            {formatDate(parseLocalDate(dateKey))}
+                        </h2>
                     </div>
 
                     <div className="flex items-center gap-2 print:hidden ml-4">
@@ -404,15 +416,49 @@
                 </div>
 
                 {dayLogs.length === 0 ? (
-                    <div className="text-center py-20 text-stone-300">
-                    <p>{STRINGS.no_logs}</p>
+                    <div className="text-center py-20">
+                    <p className="text-stone-300">{STRINGS.no_logs}</p>
                     </div>
                 ) : (
                     <div className="space-y-2 relative before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-stone-100">
                     {dayLogs.map((log) => {
                         const typeConfig = LOG_TYPES.find(l => l.id === log.type) || LOG_TYPES[LOG_TYPES.length - 1];
                         const Icon = typeConfig.icon;
-                        const isCustom = log.type === 'custom';
+                        // アイコン配色: Pellets, Veggies, Hay, Water, Critical Care, Medication → 薄いグレー背景、アクセントカラー
+                        // Poop, Pee → アクセントカラー背景、白
+                        const lightBgTypes = ['pellets', 'veggies', 'hay', 'water', 'treats', 'cc', 'meds'];
+                        const isLightBg = lightBgTypes.includes(log.type);
+                        
+                        // 5段階評価タイプ
+                        const ratingTypes = ['pellets', 'veggies', 'hay', 'water', 'treats', 'poop', 'pee'];
+                        
+                        // 5段階評価の表示用コンポーネント
+                        const RatingDisplay = ({ amount }) => {
+                            const rating = amount !== null && amount !== undefined ? parseInt(amount) : 0;
+                            const options = [1, 2, 3, 4, 5];
+                            const lightAccentColor = 'rgba(143, 176, 146, 0.4)';
+                            
+                            return (
+                                <div className="flex items-center gap-0.5">
+                                    {options.map((opt) => (
+                                        <span 
+                                            key={opt} 
+                                            className="text-xs"
+                                            style={{ 
+                                                color: opt <= rating ? ACCENT_COLOR : lightAccentColor,
+                                                fontSize: '0.7em'
+                                            }}
+                                        >
+                                            {opt <= rating ? '●' : '○'}
+                                        </span>
+                                    ))}
+                                </div>
+                            );
+                        };
+                        
+                        // 5段階評価タイプで、amountが空の場合は0として扱う
+                        const shouldShowRating = ratingTypes.includes(log.type);
+                        const ratingAmount = shouldShowRating ? (log.amount ? parseInt(log.amount) : 0) : null;
                         
                         return (
                         <div key={log.id} className="relative flex gap-3 items-center pl-0 print:break-inside-avoid">
@@ -425,43 +471,58 @@
                             }}
                             disabled={!isEditing}
                             className={`z-10 w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform ${isEditing ? 'active:scale-90 hover:opacity-80 cursor-pointer' : ''}`}
-                            style={isCustom ? { backgroundColor: '#f5f5f4', color: ACCENT_COLOR } : { backgroundColor: ACCENT_COLOR, color: 'white' }}
+                            style={isLightBg ? { backgroundColor: '#f5f5f4', color: ACCENT_COLOR } : { backgroundColor: ACCENT_COLOR, color: 'white' }}
                             >
                             <Icon size={16} strokeWidth={2} />
                             </button>
                             
                             <div 
-                            className={`flex-1 bg-white rounded-xl p-3 border border-stone-100 shadow-sm print:border-stone-200 print:shadow-none flex justify-between items-start ${isEditing ? 'cursor-pointer hover:bg-stone-50' : ''}`}
+                            className={`flex-1 bg-white rounded-xl p-3 border border-stone-100 shadow-sm print:border-stone-200 print:shadow-none flex justify-between items-center min-h-[48px] ${isEditing ? 'cursor-pointer hover:bg-stone-50' : ''}`}
                             onClick={() => isEditing && onEditLog(log)}
                             >
                             <div className="flex-1">
-                                <div className="flex justify-between items-start">
+                                <div className="flex items-center">
                                 <span className="font-bold text-stone-700 text-xs">
                                     {STRINGS.categories[log.type]}
                                 </span>
+                                </div>
+                                <div className="text-xs text-stone-600 leading-relaxed mt-0.5 flex items-center gap-2 flex-wrap min-h-[16px]">
+                                    {shouldShowRating ? (
+                                        <>
+                                            <RatingDisplay amount={ratingAmount} />
+                                            {log.notes && <span className="text-stone-500">{log.notes}</span>}
+                                        </>
+                                    ) : log.amount ? (
+                                        <>
+                                            <span className="font-medium">
+                                                {log.type === 'cc' && !log.amount.includes('g') ? `${log.amount}g` : 
+                                                 log.type === 'meds' && !log.amount.includes('ml') ? `${log.amount}ml` : 
+                                                 log.amount}
+                                            </span>
+                                            {log.notes && <span className="text-stone-500">{log.notes}</span>}
+                                        </>
+                                    ) : log.notes ? (
+                                        <span className="text-stone-500">{log.notes}</span>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono text-stone-400">
                                     {formatTime(log.date)}
                                 </span>
-                                </div>
-                                {(log.amount || log.notes) && (
-                                <div className="text-xs text-stone-600 leading-relaxed mt-0.5">
-                                    {log.amount && <span className="font-medium mr-2">{log.amount}</span>}
-                                    {log.notes && <span className="text-stone-500">{log.notes}</span>}
-                                </div>
+                                {isEditing && (
+                                    <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        onDeleteLog(log.id); 
+                                    }}
+                                    className="p-1 text-stone-300 hover:text-red-500 transition-colors z-20"
+                                    >
+                                    <Trash2 size={16} />
+                                    </button>
                                 )}
                             </div>
-
-                            {isEditing && (
-                                <button 
-                                onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    onDeleteLog(log.id); 
-                                }}
-                                className="ml-1 p-1 text-stone-300 hover:text-red-500 transition-colors z-20"
-                                >
-                                <Trash2 size={16} />
-                                </button>
-                            )}
                             </div>
                         </div>
                         );
@@ -472,7 +533,8 @@
             );
         };
 
-        const HistoryScreen = ({ logs, onSelectDate, onDeleteLog, onEditLog, onDateChange, onIconChange }) => {
+        const HistoryScreen = ({ logs, onSelectDate, onDeleteLog, onDeleteLogs, onEditLog, onDateChange, onIconChange }) => {
+            const [isEditing, setIsEditing] = useState(false);
             const formatDate = (isoString) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(parseLocalDate(isoString));
             
             const dates = [...new Set(logs.map(log => getLocalDateString(log.date)))].sort((a, b) => {
@@ -480,21 +542,51 @@
                 return a.localeCompare(b);
             });
 
+            const handleDeleteDate = (dateKey) => {
+                const logsToDelete = logs.filter(l => getLocalDateString(l.date) === dateKey);
+                const logCount = logsToDelete.length;
+                if (logCount > 0 && window.confirm(`Delete all ${logCount} log${logCount > 1 ? 's' : ''} for ${formatDate(dateKey)}?`)) {
+                    const logIds = logsToDelete.map(log => log.id);
+                    onDeleteLogs(logIds);
+                }
+            };
+
             return (
                 <>
                 <div className="space-y-2 pb-safe-content print:hidden">
-                <h2 className="text-xl font-bold text-stone-800 px-2 mb-3">{STRINGS.tab_history}</h2>
-                {dates.map(dateKey => (
-                    <Card key={dateKey} onClick={() => onSelectDate(dateKey)} className="flex items-center justify-between group py-2">
-                    <div>
-                        <div className="font-bold text-stone-700 text-sm">{formatDate(dateKey)}</div>
-                        <div className="text-xs text-stone-400">
-                        {logs.filter(l => getLocalDateString(l.date) === dateKey).length} Records
-                        </div>
+                <div className="flex items-center justify-between px-2 mb-3">
+                    <h2 className="text-xl font-bold text-stone-800">{STRINGS.tab_history}</h2>
+                    <EditToggleButton isEditing={isEditing} onClick={() => setIsEditing(!isEditing)} />
+                </div>
+                {dates.length === 0 ? (
+                    <div className="flex items-center justify-center py-12">
+                        <p className="text-stone-300">{STRINGS.no_logs}</p>
                     </div>
-                    <ChevronRight className="text-stone-300 group-hover:text-stone-500 transition-colors" size={18} />
-                    </Card>
-                ))}
+                ) : (
+                    dates.map(dateKey => (
+                        <Card key={dateKey} onClick={() => !isEditing && onSelectDate(dateKey)} className={`flex items-center justify-between group py-2 ${isEditing ? 'cursor-default' : 'cursor-pointer'}`}>
+                        <div>
+                            <div className="font-bold text-stone-700 text-sm">{formatDate(dateKey)}</div>
+                            <div className="text-xs text-stone-400">
+                            {logs.filter(l => getLocalDateString(l.date) === dateKey).length} Records
+                            </div>
+                        </div>
+                        {isEditing ? (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteDate(dateKey);
+                                }}
+                                className="p-1 text-stone-300 hover:text-red-500 transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        ) : (
+                            <ChevronRight className="text-stone-300 group-hover:text-stone-500 transition-colors" size={18} />
+                        )}
+                        </Card>
+                    ))
+                )}
                 </div>
                 
                 {/* 印刷用: すべての日付の詳細を表示 */}
@@ -532,11 +624,13 @@
             const cycleIcon = (index) => {
                 if (!isEditingGuide) return;
                 const currentItem = careGuideItems[index];
-                const currentTypeIndex = SITTER_TYPE_IDS.indexOf(currentItem.id);
+                const currentIconId = currentItem.iconId || currentItem.id;
+                const currentTypeIndex = SITTER_TYPE_IDS.indexOf(currentIconId);
                 const nextId = SITTER_TYPE_IDS[(currentTypeIndex + 1) % SITTER_TYPE_IDS.length];
                 
                 const newItems = [...careGuideItems];
-                newItems[index].id = nextId;
+                newItems[index].iconId = nextId;
+                // idは変更しない（カテゴリ名を保持）
                 setCareGuideItems(newItems);
             };
 
@@ -546,7 +640,7 @@
             };
 
             const addItem = () => {
-                setCareGuideItems([...careGuideItems, { id: 'pellets', text: '' }]);
+                setCareGuideItems([...careGuideItems, { id: 'pellets', title: '', text: '' }]);
             };
 
             return (
@@ -559,8 +653,8 @@
                 </div>
 
                 {careGuideItems.map((item, idx) => {
-                    const Icon = SITTER_ICON_MAP[item.id] || Utensils;
-                    const isOthers = item.id === 'others';
+                    const iconId = item.iconId || item.id;
+                    const Icon = SITTER_ICON_MAP[iconId] || Utensils;
 
                     return (
                     <div key={idx} className="flex gap-3 items-start p-3 bg-white rounded-xl border border-stone-100 print:border-stone-300 animate-scale-in">
@@ -568,7 +662,7 @@
                         onClick={() => cycleIcon(idx)}
                         disabled={!isEditingGuide}
                         className={`p-2 rounded-full shrink-0 transition-transform ${isEditingGuide ? 'active:scale-90 hover:opacity-80' : ''}`} 
-                        style={isOthers ? { backgroundColor: '#f5f5f4', color: ACCENT_COLOR } : { backgroundColor: ACCENT_COLOR, color: 'white' }}
+                        style={{ backgroundColor: ACCENT_COLOR, color: 'white' }}
                         >
                         <Icon size={20} strokeWidth={2} />
                         </button>
@@ -577,11 +671,16 @@
                             <div className="space-y-1">
                             <input
                             type="text"
-                            value={item.title || STRINGS.sitter_sections[item.id] || STRINGS.categories[item.id] || ''}
+                            value={item.title !== undefined ? item.title : ''}
                             onChange={(e) => handleGuideChange(idx, 'title', e.target.value)}
                             className="w-full text-sm font-bold bg-stone-50 border border-stone-200 rounded px-2 py-1 focus:outline-none focus:border-[#8FB092]"
                             readOnly={false}
                             tabIndex={0}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck="false"
+                            placeholder={STRINGS.sitter_sections[item.id] || STRINGS.categories[item.id] || ''}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setTimeout(() => e.target.focus(), 100);
@@ -674,7 +773,47 @@
             );
         };
 
-        const ProfileScreen = ({ profile, setProfile }) => {
+        // 体重ピッカーコンポーネント（0.1kg単位）
+        const WeightPicker = ({ value, onChange }) => {
+            const [selectedValue, setSelectedValue] = useState(value || '');
+            
+            useEffect(() => {
+                if (value !== undefined) {
+                    setSelectedValue(value);
+                }
+            }, [value]);
+            
+            const handleChange = (newValue) => {
+                setSelectedValue(newValue);
+                onChange(newValue);
+            };
+            
+            const options = [];
+            for (let i = 0; i <= 100; i++) {
+                options.push((i / 10).toFixed(1));
+            }
+            
+            // valueからkgを除去して数値のみを取得
+            const currentValue = selectedValue ? selectedValue.replace('kg', '').trim() : '';
+            
+            return (
+                <div className="relative">
+                    <select
+                        value={currentValue}
+                        onChange={(e) => handleChange(`${e.target.value}kg`)}
+                        className="bg-stone-50 rounded px-2 py-1 text-right outline-none text-stone-700 w-24 text-sm appearance-none"
+                    >
+                        {options.map((opt) => (
+                            <option key={opt} value={opt}>
+                                {opt}kg
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            );
+        };
+
+        const ProfileScreen = ({ profile, setProfile, careGuideItems, emergencyContact }) => {
             const [isEditingProfile, setIsEditingProfile] = useState(false);
             const [tempProfile, setTempProfile] = useState({});
 
@@ -751,7 +890,7 @@
                     )}
 
                     <Card className="flex items-center justify-between py-3 min-h-[48px]">
-                        <Cake size={18} className="text-stone-400" />
+                        <Cake size={18} style={{ color: ACCENT_COLOR }} />
                         {isEditingProfile ? (
                             <input 
                                 type="date" 
@@ -778,26 +917,11 @@
                     </Card>
 
                     <Card className="flex items-center justify-between py-3 min-h-[48px]">
-                        <Scale size={18} className="text-stone-400" />
+                        <Scale size={18} style={{ color: ACCENT_COLOR }} />
                         {isEditingProfile ? (
-                            <input 
-                                type="text" 
+                            <WeightPicker 
                                 value={tempProfile.weight} 
-                                onChange={e => setTempProfile({...tempProfile, weight: e.target.value})}
-                                className="bg-stone-50 rounded px-2 py-1 text-right outline-none text-stone-700 w-24 text-sm"
-                                readOnly={false}
-                                tabIndex={0}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setTimeout(() => e.target.focus(), 100);
-                                }}
-                                onTouchStart={(e) => {
-                                    e.stopPropagation();
-                                }}
-                                onTouchEnd={(e) => {
-                                    e.stopPropagation();
-                                    setTimeout(() => e.target.focus(), 100);
-                                }}
+                                onChange={(val) => setTempProfile({...tempProfile, weight: val})}
                             />
                         ) : (
                             <span className="font-medium text-stone-700 text-sm">{profile.weight}</span>
@@ -805,7 +929,7 @@
                     </Card>
 
                     <Card className="flex items-center justify-between py-3 min-h-[48px]">
-                        <Heart size={18} className="text-stone-400" />
+                        <Heart size={18} style={{ color: ACCENT_COLOR }} />
                         {isEditingProfile ? (
                             <input 
                                 type="text" 
@@ -838,6 +962,40 @@
                         )}
                     </Card>
                 </div>
+
+                {/* 印刷用: Care Guideの内容を表示 */}
+                <div className="hidden print:block mt-8 space-y-4">
+                    <h2 className="text-2xl font-bold text-stone-800 mb-4">{STRINGS.guide}</h2>
+                    
+                    {careGuideItems && careGuideItems.length > 0 && careGuideItems.map((item, idx) => {
+                        const iconId = item.iconId || item.id;
+                        const Icon = SITTER_ICON_MAP[iconId] || Utensils;
+                        
+                        return (
+                            <div key={idx} className="flex gap-3 items-start p-3 bg-white rounded-xl border border-stone-300">
+                                <div className="p-2 rounded-full shrink-0" style={{ backgroundColor: ACCENT_COLOR, color: 'white' }}>
+                                    <Icon size={20} strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-stone-700 text-sm mb-1">{item.title || STRINGS.sitter_sections[item.id] || STRINGS.categories[item.id]}</h3>
+                                    <p className="text-stone-600 text-sm leading-relaxed">
+                                        {item.text}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    <div className="mt-4 p-4 bg-stone-50 rounded-xl border-l-4 border-gray-400">
+                        <h3 className="font-bold text-stone-700 mb-1 flex items-center gap-2 text-sm">
+                            <Activity size={16} className="text-[#8FB092]" />
+                            {STRINGS.sitter_sections.emergency}
+                        </h3>
+                        <p className="text-stone-600 text-sm whitespace-pre-line leading-relaxed">
+                            {emergencyContact}
+                        </p>
+                    </div>
+                </div>
                 </div>
             );
         };
@@ -850,15 +1008,12 @@
             const [selectedHistoryDate, setSelectedHistoryDate] = useState(null); // Fixed ReferenceError
             
             const [isFabOpen, setIsFabOpen] = useState(false);
+            const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
             const [modalOpen, setModalOpen] = useState(false);
             const [selectedLogType, setSelectedLogType] = useState(null);
             const [editLogData, setEditLogData] = useState(null); 
 
-            const [logs, setLogs] = useState([
-                { id: 1, type: 'pellets', amount: '15g', date: new Date().toISOString(), notes: '' },
-                { id: 2, type: 'poop', amount: 'Normal', date: new Date(Date.now() - 3600000).toISOString(), notes: 'Good size' },
-                { id: 3, type: 'cc', amount: '10ml', date: new Date(Date.now() - 7200000).toISOString(), notes: 'Force feed' },
-            ]);
+            const [logs, setLogs] = useState([]);
 
             const [profile, setProfile] = useState({
                 name: 'Mugi',
@@ -870,14 +1025,7 @@
                 photo: null
             });
 
-            const [careGuideItems, setCareGuideItems] = useState([
-                { id: 'water', text: 'Fresh water twice a day (Morning/Night).' },
-                { id: 'hay', text: 'Unlimited Timothy hay. Never let it run out.' },
-                { id: 'pellets', text: '2 tablespoons in the morning.' },
-                { id: 'litter', text: 'Change litter daily. Monitor poop size.' },
-                { id: 'play', text: 'At least 1 hour of playtime outside cage.' },
-                { id: 'others', text: '' }
-            ]);
+            const [careGuideItems, setCareGuideItems] = useState([]);
             const [emergencyContact, setEmergencyContact] = useState(`Clinic: ABC Exotics Vet\nPhone: 123-456-7890\nAddress: 123 Rabbit Lane, Toronto\nOwner: 090-0000-0000 (Line/WhatsApp)`);
 
             const handlePrint = () => {
@@ -886,15 +1034,25 @@
 
             const handleAddLogClick = (typeId) => {
                 setSelectedLogType(typeId);
-                setEditLogData(null); 
+                setEditLogData(null);
                 setIsFabOpen(false);
                 setModalOpen(true);
+            };
+
+            const handleDateSelect = (dateKey) => {
+                setSelectedDateKey(dateKey);
+                setActiveTab('today');
+                setIsDatePickerOpen(false);
             };
 
             const handleDeleteLog = useCallback((id) => {
                 if (window.confirm(STRINGS.confirm_delete)) {
                     setLogs((prev) => prev.filter(l => l.id !== id));
                 }
+            }, []);
+
+            const handleDeleteLogs = useCallback((ids) => {
+                setLogs((prev) => prev.filter(l => !ids.includes(l.id)));
             }, []);
 
             const handleEditLog = useCallback((log) => {
@@ -983,7 +1141,7 @@
                                     onClick={() => handleAddLogClick(type.id)}
                                     className="w-full flex items-center gap-3 px-3 py-2 hover:bg-stone-50 rounded-lg transition-colors text-left"
                                 >
-                                    <div className="p-1.5 rounded-lg shrink-0" style={type.id === 'custom' ? { backgroundColor: '#f5f5f4', color: ACCENT_COLOR } : { backgroundColor: ACCENT_COLOR, color: 'white' }}>
+                                    <div className="p-1.5 rounded-full shrink-0 flex items-center justify-center" style={(['pellets', 'veggies', 'hay', 'water', 'treats', 'cc', 'meds'].includes(type.id)) ? { backgroundColor: '#f5f5f4', color: ACCENT_COLOR } : { backgroundColor: ACCENT_COLOR, color: 'white' }}>
                                         <type.icon size={18} />
                                     </div>
                                     <span className="text-stone-700 font-medium text-sm">{STRINGS.categories[type.id]}</span>
@@ -995,11 +1153,344 @@
                 );
             };
 
+            const DatePickerModal = () => {
+                const [currentMonth, setCurrentMonth] = useState(new Date());
+                const [showYearMonthPicker, setShowYearMonthPicker] = useState(false);
+                
+                if (!isDatePickerOpen) return null;
+                
+                const today = new Date();
+                const year = currentMonth.getFullYear();
+                const month = currentMonth.getMonth();
+                
+                // 月の最初の日と最後の日を取得
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                
+                // カレンダーの最初の日（前月の最後の週の日曜日から開始）
+                const startDate = new Date(firstDay);
+                startDate.setDate(startDate.getDate() - startDate.getDay());
+                
+                // カレンダーの最後の日（次月の最初の週の土曜日まで）
+                const endDate = new Date(lastDay);
+                endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
+                
+                // カレンダーの日付配列を生成
+                const calendarDays = [];
+                const currentDate = new Date(startDate);
+                while (currentDate <= endDate) {
+                    calendarDays.push(new Date(currentDate));
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                
+                const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                // 年と月の選択用の配列を生成
+                const currentYear = today.getFullYear();
+                const years = [];
+                for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+                    years.push(i);
+                }
+                
+                const isToday = (date) => {
+                    return getLocalDateString(date.toISOString()) === getTodayKey();
+                };
+                
+                const isCurrentMonth = (date) => {
+                    return date.getMonth() === month;
+                };
+                
+                const handlePrevMonth = () => {
+                    setCurrentMonth(new Date(year, month - 1, 1));
+                };
+                
+                const handleNextMonth = () => {
+                    setCurrentMonth(new Date(year, month + 1, 1));
+                };
+                
+                const handleYearChange = (newYear) => {
+                    setCurrentMonth(new Date(newYear, month, 1));
+                    setShowYearMonthPicker(false);
+                };
+                
+                const handleMonthChange = (newMonth) => {
+                    setCurrentMonth(new Date(year, newMonth, 1));
+                    setShowYearMonthPicker(false);
+                };
+                
+                const handleDateClick = (date) => {
+                    const dateKey = getLocalDateString(date.toISOString());
+                    handleDateSelect(dateKey);
+                };
+
+                return (
+                <>
+                    <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-[1px] z-40 transition-opacity" onClick={() => setIsDatePickerOpen(false)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-scale-in">
+                        <div className="bg-white rounded-xl shadow-xl border border-stone-100 p-4 w-full max-w-[320px] mx-auto">
+                            {!showYearMonthPicker ? (
+                                <>
+                                    {/* ヘッダー: 月と年の表示、前後の月へのナビゲーション */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <button 
+                                            onClick={handlePrevMonth}
+                                            className="p-2 rounded-full hover:bg-stone-100 transition-colors text-stone-600"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <button
+                                            onClick={() => setShowYearMonthPicker(true)}
+                                            className="text-lg font-bold text-stone-800 hover:text-[#8FB092] transition-colors px-2 py-1"
+                                        >
+                                            {monthNames[month]} {year}
+                                        </button>
+                                        <button 
+                                            onClick={handleNextMonth}
+                                            className="p-2 rounded-full hover:bg-stone-100 transition-colors text-stone-600"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                    
+                                    {/* 週のヘッダー */}
+                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                        {weekDays.map((day) => (
+                                            <div key={day} className="text-center text-xs font-medium text-stone-500 py-1">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* カレンダーの日付グリッド */}
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {calendarDays.map((date, idx) => {
+                                            const dateKey = getLocalDateString(date.toISOString());
+                                            const dayIsToday = isToday(date);
+                                            const dayIsCurrentMonth = isCurrentMonth(date);
+                                            
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleDateClick(date)}
+                                                    className={`
+                                                        aspect-square flex items-center justify-center text-sm transition-colors
+                                                        ${dayIsCurrentMonth 
+                                                            ? dayIsToday 
+                                                                ? 'bg-[#8FB092] text-white font-bold rounded-full' 
+                                                                : 'text-stone-700 hover:bg-stone-100 rounded-lg' 
+                                                            : 'text-stone-300 hover:bg-stone-50 rounded-lg'
+                                                        }
+                                                    `}
+                                                >
+                                                    {date.getDate()}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* 年と月の選択画面 */}
+                                    <div className="mb-4">
+                                        <button
+                                            onClick={() => setShowYearMonthPicker(false)}
+                                            className="text-sm text-stone-500 hover:text-stone-700 mb-3 flex items-center gap-1"
+                                        >
+                                            <ChevronLeft size={16} />
+                                            Back
+                                        </button>
+                                        <div className="text-lg font-bold text-stone-800 mb-4 text-center">Select Year & Month</div>
+                                        
+                                        {/* 年の選択 */}
+                                        <div className="mb-4">
+                                            <div className="text-xs font-medium text-stone-500 mb-2">Year</div>
+                                            <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto">
+                                                {years.map((y) => (
+                                                    <button
+                                                        key={y}
+                                                        onClick={() => handleYearChange(y)}
+                                                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                                                            y === year 
+                                                                ? 'bg-[#8FB092] text-white font-bold' 
+                                                                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                                                        }`}
+                                                    >
+                                                        {y}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* 月の選択 */}
+                                        <div>
+                                            <div className="text-xs font-medium text-stone-500 mb-2">Month</div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {monthNames.map((monthName, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => handleMonthChange(idx)}
+                                                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                                                            idx === month 
+                                                                ? 'bg-[#8FB092] text-white font-bold' 
+                                                                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                                                        }`}
+                                                    >
+                                                        {monthName.substring(0, 3)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+                );
+            };
+
+            // ドラムロールピッカーコンポーネント
+            const DrumRollPicker = ({ value, onChange, type }) => {
+                const [selectedValue, setSelectedValue] = useState(value || '');
+                
+                useEffect(() => {
+                    if (value !== undefined) {
+                        setSelectedValue(value);
+                    }
+                }, [value]);
+                
+                const handleChange = (newValue) => {
+                    setSelectedValue(newValue);
+                    onChange(newValue);
+                };
+                
+                // 5段階評価タイプ（Pellets, Veggies, Hay, Water, Treats, Poop, Pee）
+                if (['pellets', 'veggies', 'hay', 'water', 'treats', 'poop', 'pee'].includes(type)) {
+                    const options = [1, 2, 3, 4, 5];
+                    
+                    return (
+                        <div className="relative">
+                            <select
+                                name="amount"
+                                value={selectedValue}
+                                onChange={(e) => handleChange(e.target.value)}
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
+                                style={{ height: '50px' }}
+                            >
+                                <option value="">選択してください</option>
+                                {options.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                        {opt}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    );
+                }
+                
+                // Critical Care（1g単位、0-100g）
+                if (type === 'cc') {
+                    const options = [];
+                    for (let i = 0; i <= 100; i++) {
+                        options.push(i);
+                    }
+                    const currentValue = selectedValue ? parseFloat(selectedValue) : 0;
+                    
+                    return (
+                        <div className="relative">
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 overflow-hidden">
+                                    <select
+                                        name="amount"
+                                        value={selectedValue}
+                                        onChange={(e) => handleChange(e.target.value)}
+                                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
+                                        style={{ height: '50px' }}
+                                    >
+                                        {options.map((opt) => (
+                                            <option key={opt} value={opt}>
+                                                {opt}g
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                
+                // Medication（0.1ml単位、0-10ml）
+                if (type === 'meds') {
+                    const options = [];
+                    for (let i = 0; i <= 100; i++) {
+                        options.push((i / 10).toFixed(1));
+                    }
+                    
+                    return (
+                        <div className="relative">
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 overflow-hidden">
+                                    <select
+                                        name="amount"
+                                        value={selectedValue}
+                                        onChange={(e) => handleChange(e.target.value)}
+                                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-3 text-stone-700 focus:outline-none focus:border-[#8FB092] text-center appearance-none"
+                                        style={{ height: '50px' }}
+                                    >
+                                        {options.map((opt) => (
+                                            <option key={opt} value={opt}>
+                                                {opt}ml
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                
+                // その他のタイプは通常のテキスト入力
+                return (
+                    <input 
+                        name="amount" 
+                        type="text" 
+                        value={selectedValue}
+                        onChange={(e) => handleChange(e.target.value)}
+                        placeholder="..."
+                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 text-stone-700 focus:outline-none focus:border-[#8FB092] h-[50px]" 
+                        readOnly={false}
+                        tabIndex={0}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setTimeout(() => e.target.focus(), 100);
+                        }}
+                        onTouchStart={(e) => {
+                            e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            setTimeout(() => e.target.focus(), 100);
+                        }}
+                    />
+                );
+            };
+
             const EntryModal = () => {
                 if (!modalOpen) return null;
                 const type = LOG_TYPES.find(t => t.id === selectedLogType);
                 if (!type) return null;
                 const Icon = type.icon;
+                
+                const [amountValue, setAmountValue] = useState(editLogData ? editLogData.amount : '');
+                
+                // selectedLogTypeが変わったときにamountValueをリセット
+                useEffect(() => {
+                    if (!editLogData) {
+                        setAmountValue('');
+                    }
+                }, [selectedLogType]);
                 
                 let initialTimeStr;
                 if (editLogData) {
@@ -1032,7 +1523,7 @@
                             e.preventDefault();
                             const formData = new FormData(e.target);
                             saveLog({
-                                amount: formData.get('amount'),
+                                amount: amountValue || formData.get('amount') || '',
                                 notes: formData.get('notes'),
                                 time: formData.get('time')
                             });
@@ -1063,26 +1554,10 @@
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-xs font-bold text-stone-400 uppercase mb-1">{STRINGS.amount}</label>
-                                    <input 
-                                        name="amount" 
-                                        type="text" 
-                                        defaultValue={editLogData ? editLogData.amount : ''}
-                                        placeholder="..."
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 text-stone-700 focus:outline-none focus:border-[#8FB092] h-[50px]" 
-                                        autoFocus
-                                        readOnly={false}
-                                        tabIndex={0}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setTimeout(() => e.target.focus(), 100);
-                                        }}
-                                        onTouchStart={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                        onTouchEnd={(e) => {
-                                            e.stopPropagation();
-                                            setTimeout(() => e.target.focus(), 100);
-                                        }}
+                                    <DrumRollPicker 
+                                        value={amountValue}
+                                        onChange={setAmountValue}
+                                        type={selectedLogType}
                                     />
                                 </div>
                             </div>
@@ -1169,6 +1644,7 @@
                                 setActiveTab('today'); 
                             }}
                             onDeleteLog={handleDeleteLog}
+                            onDeleteLogs={handleDeleteLogs}
                             onEditLog={handleEditLog}
                             onDateChange={handleDateChange}
                             onIconChange={handleIconChange}
@@ -1184,12 +1660,18 @@
                         />
                         )}
                         
-                        {activeTab === 'profile' && <ProfileScreen profile={profile} setProfile={setProfile} />}
+                        {activeTab === 'profile' && <ProfileScreen profile={profile} setProfile={setProfile} careGuideItems={careGuideItems} emergencyContact={emergencyContact} />}
                     </main>
 
-                    {!isFabOpen && (activeTab === 'today') && (
+                    {!isFabOpen && !isDatePickerOpen && (activeTab === 'today' || activeTab === 'history') && (
                         <button 
-                        onClick={() => setIsFabOpen(true)}
+                        onClick={() => {
+                            if (activeTab === 'history') {
+                                setIsDatePickerOpen(true);
+                            } else {
+                                setIsFabOpen(true);
+                            }
+                        }}
                         className="fixed bottom-20 right-6 z-30 w-14 h-14 bg-[#8FB092] rounded-full shadow-lg shadow-[#8FB092]/30 text-white flex items-center justify-center transition-transform active:scale-90 print:hidden"
                         >
                         <Plus size={28} strokeWidth={2.5} />
@@ -1197,6 +1679,7 @@
                     )}
 
                     <FabMenu />
+                    <DatePickerModal />
                     <EntryModal />
 
                     <nav className="flex-none bg-[#FDFDFD] border-t border-stone-100 px-8 py-3 pb-safe z-30 print:hidden">
