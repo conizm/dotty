@@ -54,7 +54,10 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .pb-safe { 
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            background-color: #FDFDFD;
+        }
         .pb-safe-content { padding-bottom: 80px; }
         
         @keyframes slide-up {
@@ -955,7 +958,7 @@
 
             return (
                 <div className="h-screen flex flex-col bg-[#FDFDFD] font-sans text-[#44403C] overflow-hidden print:bg-white print:h-auto print:overflow-visible">
-                    <header className="flex-none bg-[#FDFDFD] px-4 py-2 flex justify-between items-center border-b border-stone-100 z-30 print:hidden">
+                    <header className="flex-none bg-[#FDFDFD] px-6 py-3 flex justify-between items-center border-b border-stone-100 z-30 print:hidden">
                         <div className="flex items-center gap-2">
                         <img 
                             src="https://conizm.cc/dotty/images/dotty_logo_yoko.png" 
@@ -1015,7 +1018,7 @@
                     <FabMenu />
                     <EntryModal />
 
-                    <nav className="flex-none bg-white border-t border-stone-100 px-6 py-2 pb-safe z-30 print:hidden">
+                    <nav className="flex-none bg-[#FDFDFD] border-t border-stone-100 px-8 py-3 pb-safe z-30 print:hidden">
                         <div className="max-w-md mx-auto flex justify-between items-center">
                         <NavIcon 
                             icon={Calendar} 
