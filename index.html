@@ -325,7 +325,7 @@
                 className={`p-2 rounded-full transition-colors ${isEditing ? 'text-white' : 'hover:text-stone-600 hover:bg-stone-100'}`}
                 style={isEditing ? { backgroundColor: ACCENT_COLOR } : { color: 'rgba(120, 113, 108, 0.6)' }}
             >
-                {isEditing ? <Check size={20} /> : <Edit2 size={20} />}
+                {isEditing ? <Check size={20} /> : <Edit2 size={20} style={{ opacity: 0.45 }} />}
             </button>
         );
 
@@ -1634,7 +1634,7 @@
 
             return (
                 <div className="h-screen flex flex-col bg-[#FDFDFD] font-sans text-[#44403C] overflow-hidden print:bg-white print:h-auto print:overflow-visible">
-                    <header className="fixed top-0 left-0 right-0 bg-[#FDFDFD] px-6 py-3 flex justify-between items-center border-b border-stone-100 z-30 print:hidden" style={{ backgroundColor: '#FDFDFD' }}>
+                    <header className="fixed top-0 left-0 right-0 bg-[#FDFDFD] px-[13px] py-3 flex justify-between items-center border-b border-stone-100 z-30 print:hidden" style={{ backgroundColor: '#FDFDFD' }}>
                         <div className="flex items-center gap-2">
                         <img 
                             src="https://conizm.cc/dotty/images/dotty_logo_yoko.png" 
